@@ -17,5 +17,6 @@
   },
   "scripts": {
     "test": "npm --workspace packages/permission-sandbox test"
-  }
+  },
+  "license": "MIT"
 }
