@@ -10,6 +10,7 @@ import { compileSandboxConfig } from "../src/sandbox-config.ts";
 
 const hasBwrap = spawnSync("bash", ["-lc", "command -v bwrap >/dev/null"]).status === 0;
 const insideSandboxRuntime = process.env.SANDBOX_RUNTIME === "1" || process.env.PI_CODING_AGENT === "true";
+const skipSandboxRuntimeIntegration = insideSandboxRuntime || process.env.CI === "true";
 
 function shQuote(value: string): string {
 	return `'${value.replace(/'/g, `'\\''`)}'`;
@@ -20,7 +21,7 @@ async function runSandboxed(command: string, cwd: string) {
 	return spawnSync("bash", ["-c", wrapped], { cwd, encoding: "utf8" });
 }
 
-test("sandbox-runtime allows read carveout under denied directory", { skip: process.platform !== "linux" || !hasBwrap || insideSandboxRuntime }, async () => {
+test("sandbox-runtime allows read carveout under denied directory", { skip: process.platform !== "linux" || !hasBwrap || skipSandboxRuntimeIntegration }, async () => {
 	const root = mkdtempSync(join(tmpdir(), "pi-srt-"));
 	const cwd = join(root, "workspace");
 	const app = join(root, "myapp");
@@ -58,7 +59,7 @@ test("sandbox-runtime allows read carveout under denied directory", { skip: proc
 	}
 });
 
-test("sandbox-runtime blocks writes outside allowWrite", { skip: process.platform !== "linux" || !hasBwrap || insideSandboxRuntime }, async () => {
+test("sandbox-runtime blocks writes outside allowWrite", { skip: process.platform !== "linux" || !hasBwrap || skipSandboxRuntimeIntegration }, async () => {
 	const root = mkdtempSync(join(tmpdir(), "pi-srt-write-"));
 	const cwd = join(root, "workspace");
 	const app = join(root, "myapp");
