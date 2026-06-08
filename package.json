@@ -7,6 +7,14 @@
   "workspaces": [
     "packages/*"
   ],
+  "pi": {
+    "extensions": [
+      "packages/context-usage/index.ts",
+      "packages/handoff/index.ts",
+      "packages/tools/index.ts",
+      "packages/permission-sandbox/index.ts"
+    ]
+  },
   "scripts": {
     "test": "npm --workspace packages/permission-sandbox test"
   }
