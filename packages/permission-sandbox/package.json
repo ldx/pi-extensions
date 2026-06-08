@@ -1,0 +1,19 @@
+{
+  "name": "pi-permission-sandbox",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "scripts": {
+    "test": "node --experimental-strip-types --test test/*.test.ts",
+    "test:integration": "node --experimental-strip-types --test test/*.integration.test.ts",
+    "check": "npm run test"
+  },
+  "dependencies": {
+    "@anthropic-ai/sandbox-runtime": "0.0.26"
+  }
+}
