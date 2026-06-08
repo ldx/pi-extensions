@@ -1,0 +1,12 @@
+{
+  "name": "pi-tools-manager",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Pi extension that shows, enables, disables, and inspects available tools.",
+  "type": "module",
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

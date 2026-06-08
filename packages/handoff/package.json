@@ -1,0 +1,12 @@
+{
+  "name": "pi-handoff",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Pi extension that summarizes current context into a fresh focused session.",
+  "type": "module",
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}
