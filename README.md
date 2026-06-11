@@ -30,7 +30,7 @@ Reload Pi after installing or updating:
 
 ## Packages
 
-- [`packages/permission-sandbox`](packages/permission-sandbox) -- permission checks for Pi file tools plus sandboxed bash via `@anthropic-ai/sandbox-runtime`.
+- [`packages/permission-sandbox`](packages/permission-sandbox) -- permission checks for Pi file tools plus OS-sandboxed bash.
 - [`packages/context-usage`](packages/context-usage) -- `/context-usage` with categorized context-window usage estimates.
 - [`packages/handoff`](packages/handoff) -- `/handoff` to summarize the current context into a fresh focused session.
 - [`packages/tools`](packages/tools) -- `/tools` to inspect and toggle active tools.
@@ -55,12 +55,12 @@ After install, these commands are available:
 
 ## Permission sandbox setup
 
-The permission sandbox uses `@anthropic-ai/sandbox-runtime` for bash sandboxing.
+The permission sandbox uses `bubblewrap` for Linux bash sandboxing and `@anthropic-ai/sandbox-runtime` on macOS.
 
-Linux dependencies:
+Linux dependency:
 
 ```bash
-sudo apt install bubblewrap socat ripgrep
+sudo apt install bubblewrap
 ```
 
 macOS uses `sandbox-exec` via sandbox-runtime and does not need bubblewrap.

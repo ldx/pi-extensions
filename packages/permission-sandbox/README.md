@@ -1,11 +1,11 @@
 # Pi Permission Sandbox
 
-Lightweight pi extension that combines direct file-tool policy checks with OS-level bash sandboxing via `@anthropic-ai/sandbox-runtime`.
+Lightweight pi extension that combines direct file-tool policy checks with OS-level bash sandboxing. Linux uses a direct `bubblewrap` backend; macOS uses `@anthropic-ai/sandbox-runtime`.
 
 ## What it enforces
 
 - Direct pi tools: `read`, `write`, `edit`, `ls`, `grep`, and `find` are checked before execution.
-- Agent `bash` and user `!` / `!!` commands run through sandbox-runtime when available.
+- Agent `bash` and user `!` / `!!` commands run through an OS sandbox when available.
 - Outside-cwd direct file access asks in UI by default and blocks in non-interactive mode by default.
 - Rules support deny, ask, read-only, and write access.
 
@@ -78,6 +78,6 @@ Access values:
 
 ## Linux notes
 
-`sandbox-runtime` on Linux does not natively support globs. This extension expands `/**` to the containing directory and expands other globs only for paths that already exist. Direct pi file tools still enforce glob rules exactly.
+The Linux backend skips non-existing deny paths instead of creating placeholder mount points in the project. Existing denied files and directories are still hidden or made read-only, and direct pi file tools enforce glob rules exactly.
 
-`sandbox-runtime` also mounts `/dev` for bash compatibility. Direct pi file tools enforce `/dev/...` rules, but bash commands may still see device nodes such as `/dev/null` and `/dev/zero`.
+The Linux backend mounts `/dev` for bash compatibility. Direct pi file tools enforce `/dev/...` rules, but bash commands may still see device nodes such as `/dev/null` and `/dev/zero`.

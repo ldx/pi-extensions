@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -8,7 +8,8 @@ import { createBashTool, getAgentDir } from "@earendil-works/pi-coding-agent";
 import { loadPermissionConfig, type Operation, type PermissionConfig } from "./config.ts";
 import { evaluatePathPolicy, formatDecision, GrantStore, type PolicyDecision } from "./policy.ts";
 import { resolvePathForPolicy } from "./paths.ts";
-import { compileSandboxConfig } from "./sandbox-config.ts";
+import { compileSandboxConfig, type SandboxRuntimeLikeConfig } from "./sandbox-config.ts";
+import { wrapCommandWithLinuxBwrap } from "./linux-bwrap.ts";
 
 const EXTENSION_NAME = "permission-sandbox";
 
@@ -201,11 +202,13 @@ async function enforceDirectFileTool(pi: ExtensionAPI, event: ToolCallEvent, ctx
 	return { block: true, reason: `Blocked by permission policy: ${formatDecision(decision)}` };
 }
 
-function createSandboxedBashOps(): BashOperations {
+function createSandboxedBashOps(state: RuntimeState): BashOperations {
 	return {
 		async exec(command, cwd, { onData, signal, timeout, env }) {
 			if (!existsSync(cwd)) throw new Error(`Working directory does not exist: ${cwd}`);
-			const wrappedCommand = await SandboxManager.wrapWithSandbox(command);
+			const wrappedCommand = process.platform === "linux"
+				? wrapCommandWithLinuxBwrap(command, compileSandboxConfig(state.config, state.cwd, "linux").config).command
+				: await SandboxManager.wrapWithSandbox(command);
 			const scriptPath = join(mkdtempSync(join(tmpdir(), "pi-permission-sandbox-")), "run.sh");
 			writeFileSync(scriptPath, `#!/usr/bin/env bash\nexec ${wrappedCommand}\n`, { mode: 0o700 });
 
@@ -275,6 +278,10 @@ function createSandboxedBashOps(): BashOperations {
 	};
 }
 
+function hasLinuxBwrapDependencies(): boolean {
+	return spawnSync("bash", ["-lc", "command -v bwrap >/dev/null"], { stdio: "ignore" }).status === 0;
+}
+
 async function initializeSandbox(state: RuntimeState, ctx: ExtensionContext) {
 	state.sandboxEnabled = false;
 	state.sandboxInitialized = false;
@@ -291,6 +298,15 @@ async function initializeSandbox(state: RuntimeState, ctx: ExtensionContext) {
 	for (const warning of compiled.warnings) ctx.ui.notify(`Permission sandbox: ${warning}`, "warning");
 
 	try {
+		if (process.platform === "linux") {
+			if (!hasLinuxBwrapDependencies()) throw new Error("bwrap is not installed");
+			const planned = wrapCommandWithLinuxBwrap("true", compiled.config as SandboxRuntimeLikeConfig);
+			for (const warning of planned.warnings) ctx.ui.notify(`Permission sandbox: ${warning}`, "warning");
+			state.sandboxWarnings.push(...planned.warnings);
+			state.sandboxEnabled = true;
+			state.sandboxInitialized = true;
+			return;
+		}
 		await SandboxManager.reset();
 		await SandboxManager.initialize(compiled.config as SandboxRuntimeConfig);
 		state.sandboxEnabled = true;
@@ -323,7 +339,7 @@ export default function permissionSandbox(pi: ExtensionAPI) {
 				}
 				throw new Error("Permission sandbox unavailable; bash command blocked");
 			}
-			return createBashTool(state.cwd, { operations: createSandboxedBashOps() }).execute(id, params, signal, onUpdate);
+			return createBashTool(state.cwd, { operations: createSandboxedBashOps(state) }).execute(id, params, signal, onUpdate);
 		},
 	});
 
@@ -334,7 +350,7 @@ export default function permissionSandbox(pi: ExtensionAPI) {
 
 	pi.on("user_bash", () => {
 		if (!state.config.enabled || !state.config.sandboxBash) return undefined;
-		if (state.sandboxEnabled && state.sandboxInitialized) return { operations: createSandboxedBashOps() };
+		if (state.sandboxEnabled && state.sandboxInitialized) return { operations: createSandboxedBashOps(state) };
 		if (state.config.sandboxUnavailable === "allow") return undefined;
 		return {
 			result: {
