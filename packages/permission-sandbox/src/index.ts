@@ -25,6 +25,7 @@ interface RuntimeState {
 	cwd: string;
 	config: PermissionConfig;
 	configWarnings: string[];
+	sessionEnabledOverride: boolean | undefined;
 	sandboxWarnings: string[];
 	sandboxEnabled: boolean;
 	sandboxInitialized: boolean;
@@ -38,6 +39,7 @@ function initialState(): RuntimeState {
 		cwd: process.cwd(),
 		config: loaded.config,
 		configWarnings: loaded.warnings,
+		sessionEnabledOverride: undefined,
 		sandboxWarnings: [],
 		sandboxEnabled: false,
 		sandboxInitialized: false,
@@ -282,6 +284,18 @@ function hasLinuxBwrapDependencies(): boolean {
 	return spawnSync("bash", ["-lc", "command -v bwrap >/dev/null"], { stdio: "ignore" }).status === 0;
 }
 
+async function resetSandboxRuntime(state: RuntimeState): Promise<void> {
+	if (state.sandboxInitialized && process.platform !== "linux") {
+		try {
+			await SandboxManager.reset();
+		} catch {
+			// Best effort cleanup.
+		}
+	}
+	state.sandboxEnabled = false;
+	state.sandboxInitialized = false;
+}
+
 async function initializeSandbox(state: RuntimeState, ctx: ExtensionContext) {
 	state.sandboxEnabled = false;
 	state.sandboxInitialized = false;
@@ -366,6 +380,7 @@ export default function permissionSandbox(pi: ExtensionAPI) {
 		state.cwd = ctx.cwd;
 		state.grants.clear();
 		state.audit = [];
+		state.sessionEnabledOverride = undefined;
 		const loaded = loadPermissionConfig(ctx.cwd, getAgentDir());
 		state.config = loaded.config;
 		state.configWarnings = loaded.warnings;
@@ -381,20 +396,37 @@ export default function permissionSandbox(pi: ExtensionAPI) {
 	});
 
 	pi.on("session_shutdown", async () => {
-		if (state.sandboxInitialized) {
-			try {
-				await SandboxManager.reset();
-			} catch {
-				// Best effort cleanup.
-			}
-		}
+		await resetSandboxRuntime(state);
 	});
 
 	pi.registerCommand("permissions", {
-		description: "Show permission sandbox status. Use: /permissions rules or /permissions audit",
+		description: "Show permission sandbox status. Use: /permissions on, /permissions off, /permissions rules, or /permissions audit",
 		handler: async (args, ctx) => {
 			const subcommand = args.trim().toLowerCase();
 			const loaded = loadPermissionConfig(ctx.cwd, getAgentDir());
+
+			if (subcommand === "on") {
+				if (pi.getFlag("no-permission-sandbox")) {
+					ctx.ui.notify("Permission sandbox cannot be enabled because --no-permission-sandbox is set.", "warning");
+					return;
+				}
+				await resetSandboxRuntime(state);
+				state.sessionEnabledOverride = true;
+				state.config = loaded.config;
+				state.config.enabled = true;
+				state.configWarnings = loaded.warnings;
+				await initializeSandbox(state, ctx);
+				ctx.ui.notify(`Permission sandbox enabled for this session. Bash sandbox: ${state.sandboxEnabled ? "enabled" : "disabled"}.`, "info");
+				return;
+			}
+
+			if (subcommand === "off") {
+				state.sessionEnabledOverride = false;
+				state.config.enabled = false;
+				await resetSandboxRuntime(state);
+				ctx.ui.notify("Permission sandbox disabled for this session. Direct file checks and bash sandboxing are off.", "warning");
+				return;
+			}
 
 			if (subcommand === "rules") {
 				const lines = ["Permission rules:"];
@@ -426,6 +458,7 @@ export default function permissionSandbox(pi: ExtensionAPI) {
 			const lines = [
 				"Permission sandbox",
 				`  enabled: ${state.config.enabled}`,
+				`  session override: ${state.sessionEnabledOverride === undefined ? "none" : state.sessionEnabledOverride ? "on" : "off"}`,
 				`  bash sandbox: ${state.sandboxEnabled ? "enabled" : "disabled"}`,
 				`  cwd: ${sampleCwd}`,
 				`  global config: ${loaded.globalPath}`,
@@ -438,7 +471,7 @@ export default function permissionSandbox(pi: ExtensionAPI) {
 				`  session denied audit entries: ${state.audit.length}`,
 				`  compiled bash policy: writable paths ${fs.allowWrite.length}, read-deny paths ${fs.denyRead.length}, write-deny paths ${fs.denyWrite.length}`,
 			];
-			if (subcommand && subcommand !== "status") lines.push("", `Unknown subcommand: ${subcommand}`, "Use /permissions, /permissions rules, or /permissions audit.");
+			if (subcommand && subcommand !== "status") lines.push("", `Unknown subcommand: ${subcommand}`, "Use /permissions, /permissions on, /permissions off, /permissions rules, or /permissions audit.");
 			if (state.configWarnings.length > 0) lines.push("", "Config warnings:", ...state.configWarnings.map((w) => `  ${w}`));
 			const allSandboxWarnings = [...state.sandboxWarnings, ...compiled.warnings].filter((warning, index, arr) => arr.indexOf(warning) === index);
 			if (allSandboxWarnings.length > 0) lines.push("", "Sandbox warnings:", ...allSandboxWarnings.map((w) => `  ${w}`));

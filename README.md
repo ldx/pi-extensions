@@ -49,6 +49,8 @@ After install, these commands are available:
 /tools toggle <tool-name...>
 /tools reset
 /permissions
+/permissions on
+/permissions off
 /permissions rules
 /permissions audit
 ```

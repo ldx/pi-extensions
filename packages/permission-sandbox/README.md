@@ -68,6 +68,8 @@ Access values:
 ## Commands and flags
 
 - `/permissions` shows current status, config paths, rule count, and session grants.
+- `/permissions on` enables direct file checks and bash sandboxing for the current session.
+- `/permissions off` disables direct file checks and bash sandboxing for the current session.
 - `--no-permission-sandbox` disables enforcement for a run.
 
 ## Platform notes
