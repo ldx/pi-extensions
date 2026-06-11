@@ -225,8 +225,12 @@ function addDefaultOutsideCwdDenyReadPaths(args: {
 			for (const entry of readdirSync(home)) {
 				const path = join(home, entry);
 				if (isInsidePath(path, args.cwd)) continue;
-				if (allowRulesInRoot(path, args.rules).length > 0) continue;
-				args.denyRead.push(path);
+				const allows = allowRulesInRoot(path, args.rules);
+				if (allows.length === 0) {
+					args.denyRead.push(path);
+					continue;
+				}
+				args.denyRead.push(...denySiblingsExceptAllowed(path, allows));
 			}
 		} catch (err) {
 			args.warnings.push(`Could not enumerate ${home} for outside-cwd bash read denies: ${err instanceof Error ? err.message : String(err)}`);

@@ -83,3 +83,5 @@ Access values:
 The Linux backend skips non-existing deny paths instead of creating placeholder mount points in the project. Existing denied files and directories are still hidden or made read-only, and direct pi file tools enforce glob rules exactly.
 
 The Linux backend mounts `/dev` for bash compatibility. Direct pi file tools enforce `/dev/...` rules, but bash commands may still see device nodes such as `/dev/null` and `/dev/zero`.
+
+Some local desktop-app integrations do not work inside a `bubblewrap` mount namespace. In particular, 1Password CLI desktop integration may reject `op` even when its config and daemon pid file are writable. Use `/permissions off`, run the trusted `op` command, then `/permissions on` if you need that integration.

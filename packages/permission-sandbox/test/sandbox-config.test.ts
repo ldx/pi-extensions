@@ -64,6 +64,15 @@ test("sandbox config maps deny/read/write rules", () => {
 	assert.ok(compiled.denyWrite.includes(join(app, "settings.json")));
 });
 
+test("sandbox config includes bash-only write rules", () => {
+	const { root, cwd } = tempProject();
+	const cache = join(root, "cache");
+	mkdirSync(cache);
+	const c = config({ rules: [{ path: join(cache, "**"), access: "write", ops: ["bash"], source: "global" }] });
+	const compiled = compileSandboxConfig(c, cwd, "linux").config.filesystem;
+	assert.ok(compiled.allowWrite.includes(cache));
+});
+
 test("sandbox config lets user exact read rule override matching default deny", () => {
 	const { root, cwd } = tempProject();
 	const hosts = join(root, "hosts.yml");

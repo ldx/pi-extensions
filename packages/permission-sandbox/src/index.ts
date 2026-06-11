@@ -152,6 +152,7 @@ function sanitizeBashEnv(env: NodeJS.ProcessEnv | undefined): NodeJS.ProcessEnv 
 		if (value === undefined) continue;
 		if (/^(HTTP_PROXY|HTTPS_PROXY|ALL_PROXY|NO_PROXY|http_proxy|https_proxy|all_proxy|no_proxy)$/.test(key)) sanitized[key] = value;
 		if (/^(CLAUDE_CODE_HOST_|SANDBOX_RUNTIME$)/.test(key)) sanitized[key] = value;
+		if (/^(OP_|ONEPASSWORD_)/.test(key)) sanitized[key] = value;
 	}
 	return sanitized;
 }

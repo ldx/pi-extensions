@@ -73,6 +73,10 @@ export const DEFAULT_CONFIG: PermissionConfig = {
 	rules: [
 		{ path: ".", access: "write", source: "default", comment: "current workspace" },
 		{ path: "/tmp", access: "write", source: "default", comment: "temporary files" },
+		{ path: "~/.cache/mise/**", access: "write", ops: ["bash"], source: "default", comment: "mise cache for sandboxed commands" },
+		{ path: "~/.config/op/**", access: "write", ops: ["bash"], source: "default", comment: "1Password CLI config for sandboxed commands" },
+		{ path: "~/.cache/op/**", access: "write", ops: ["bash"], source: "default", comment: "1Password CLI cache for sandboxed commands" },
+		{ path: "/run/user/*/op-daemon.pid", access: "write", ops: ["bash"], source: "default", comment: "1Password CLI daemon pid for sandboxed commands" },
 
 		// Project-local secret material. Keep these readable only if the user adds a
 		// narrower explicit allow/read rule.

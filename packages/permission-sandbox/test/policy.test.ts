@@ -57,6 +57,15 @@ test("specific allow carves out broad deny", () => {
 	assert.equal(evaluatePathPolicy({ config: c, cwd, operation: "read", path: join(app, "token.txt") }).kind, "block");
 });
 
+test("bash-only rule does not allow direct file tools", () => {
+	const { root, cwd } = tempProject();
+	const cache = join(root, "cache");
+	mkdirSync(cache);
+	writeFileSync(join(cache, "state.json"), "{}");
+	const c = config({ rules: [{ path: join(cache, "**"), access: "write", ops: ["bash"], source: "global" }] });
+	assert.equal(evaluatePathPolicy({ config: c, cwd, operation: "read", path: join(cache, "state.json") }).kind, "ask");
+});
+
 test("user exact rule can override matching default deny", () => {
 	const { root, cwd } = tempProject();
 	const hosts = join(root, "hosts.yml");
