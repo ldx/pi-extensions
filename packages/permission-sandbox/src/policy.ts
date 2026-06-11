@@ -82,10 +82,16 @@ function isProjectLooseningOutsideCwd(rule: CompiledRule, config: PermissionConf
 	return rule.access === "read" || rule.access === "write";
 }
 
+function sourcePrecedence(rule: CompiledRule): number {
+	return rule.source === "default" ? 0 : 1;
+}
+
 function chooseRule(rules: CompiledRule[]): CompiledRule | undefined {
 	return [...rules].sort((a, b) => {
 		const bySpecificity = b.specificity - a.specificity;
 		if (bySpecificity !== 0) return bySpecificity;
+		const bySource = sourcePrecedence(b) - sourcePrecedence(a);
+		if (bySource !== 0) return bySource;
 		return accessPrecedence(b.access) - accessPrecedence(a.access);
 	})[0];
 }

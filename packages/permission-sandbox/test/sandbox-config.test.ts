@@ -64,6 +64,22 @@ test("sandbox config maps deny/read/write rules", () => {
 	assert.ok(compiled.denyWrite.includes(join(app, "settings.json")));
 });
 
+test("sandbox config lets user exact read rule override matching default deny", () => {
+	const { root, cwd } = tempProject();
+	const hosts = join(root, "hosts.yml");
+	writeFileSync(hosts, "token");
+	const c = config({
+		rules: [
+			{ path: hosts, access: "deny", source: "default" },
+			{ path: hosts, access: "read", source: "global" },
+		],
+	});
+	const compiled = compileSandboxConfig(c, cwd, "linux").config.filesystem;
+	assert.equal(compiled.denyRead.includes(hosts), false);
+	assert.ok(compiled.allowRead.includes(hosts));
+	assert.ok(compiled.denyWrite.includes(hosts));
+});
+
 test("sandbox config does not expand ordinary recursive denies", () => {
 	const { root, cwd } = tempProject();
 	const app = join(root, "myapp");

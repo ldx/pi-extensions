@@ -19,6 +19,7 @@ export interface NetworkConfig {
 	allowedDomains?: string[];
 	deniedDomains?: string[];
 	allowUnixSockets?: string[];
+	allowAllUnixSockets?: boolean;
 	allowLocalBinding?: boolean;
 }
 

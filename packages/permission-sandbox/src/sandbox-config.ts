@@ -128,11 +128,16 @@ function expandAllowedWritePathsForLinux(paths: string[], warnings: string[]): s
 	return out;
 }
 
+function allowOverridesDeny(rule: CompiledRule, denyingRule: CompiledRule): boolean {
+	if (rule.specificity > denyingRule.specificity) return true;
+	return rule.specificity === denyingRule.specificity && denyingRule.source === "default" && rule.source !== "default";
+}
+
 function isReadAllowedByMoreSpecificRule(path: string, denyingRule: CompiledRule, rules: CompiledRule[]): boolean {
 	return rules.some((rule) => {
 		if (rule === denyingRule) return false;
 		if (rule.access !== "read" && rule.access !== "write") return false;
-		if (rule.specificity <= denyingRule.specificity) return false;
+		if (!allowOverridesDeny(rule, denyingRule)) return false;
 		return pathMatchesPattern(path, rule.absolutePattern) || isInsidePath(path, rule.absolutePattern);
 	});
 }
@@ -141,7 +146,7 @@ function hasMoreSpecificAllowUnderRule(denyingRule: CompiledRule, rules: Compile
 	return rules.some((rule) => {
 		if (rule === denyingRule) return false;
 		if (rule.access !== "read" && rule.access !== "write") return false;
-		if (rule.specificity <= denyingRule.specificity) return false;
+		if (!allowOverridesDeny(rule, denyingRule)) return false;
 		return pathMatchesPattern(rule.absolutePattern, denyingRule.absolutePattern) || isInsidePath(denyingRule.absolutePattern, rule.absolutePattern);
 	});
 }

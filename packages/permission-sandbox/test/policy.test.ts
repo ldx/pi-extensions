@@ -57,6 +57,20 @@ test("specific allow carves out broad deny", () => {
 	assert.equal(evaluatePathPolicy({ config: c, cwd, operation: "read", path: join(app, "token.txt") }).kind, "block");
 });
 
+test("user exact rule can override matching default deny", () => {
+	const { root, cwd } = tempProject();
+	const hosts = join(root, "hosts.yml");
+	writeFileSync(hosts, "token");
+	const c = config({
+		rules: [
+			{ path: hosts, access: "deny", source: "default" },
+			{ path: hosts, access: "read", source: "global" },
+		],
+	});
+	assert.equal(evaluatePathPolicy({ config: c, cwd, operation: "read", path: hosts }).kind, "allow");
+	assert.equal(evaluatePathPolicy({ config: c, cwd, operation: "write", path: hosts }).kind, "block");
+});
+
 test("untrusted project config cannot allow outside cwd", () => {
 	const { root, cwd } = tempProject();
 	const outside = join(root, "outside.txt");

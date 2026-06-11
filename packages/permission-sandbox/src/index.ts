@@ -138,6 +138,8 @@ function sanitizeBashEnv(env: NodeJS.ProcessEnv | undefined): NodeJS.ProcessEnv 
 		"LANG",
 		"LC_ALL",
 		"LC_CTYPE",
+		"DBUS_SESSION_BUS_ADDRESS",
+		"XDG_RUNTIME_DIR",
 	]);
 	const sanitized: NodeJS.ProcessEnv = {};
 	for (const key of keep) {
