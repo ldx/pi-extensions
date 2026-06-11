@@ -30,10 +30,10 @@ Reload Pi after installing or updating:
 
 ## Packages
 
-- [`packages/permission-sandbox`](packages/permission-sandbox) -- permission checks for Pi file tools plus OS-sandboxed bash.
 - [`packages/context-usage`](packages/context-usage) -- `/context-usage` with categorized context-window usage estimates.
 - [`packages/handoff`](packages/handoff) -- `/handoff` to summarize the current context into a fresh focused session.
 - [`packages/tools`](packages/tools) -- `/tools` to inspect and toggle active tools.
+- [`packages/clear`](packages/clear) -- `/clear` to reset context into a fresh empty session.
 
 ## Commands
 
@@ -42,73 +42,14 @@ After install, these commands are available:
 ```text
 /context-usage
 /handoff [goal]
+/clear
 /tools
 /tools <tool-name>
 /tools enable <tool-name...>
 /tools disable <tool-name...>
 /tools toggle <tool-name...>
 /tools reset
-/permissions
-/permissions on
-/permissions off
-/permissions rules
-/permissions audit
 ```
-
-## Permission sandbox setup
-
-The permission sandbox uses `bubblewrap` for Linux bash sandboxing and `@anthropic-ai/sandbox-runtime` on macOS.
-
-Linux dependency:
-
-```bash
-sudo apt install bubblewrap
-```
-
-macOS uses `sandbox-exec` via sandbox-runtime and does not need bubblewrap.
-
-Global config path:
-
-```text
-~/.pi/agent/permissions.json
-```
-
-Project config path:
-
-```text
-.pi/permissions.json
-```
-
-A recommended baseline config is included at:
-
-```text
-packages/permission-sandbox/recommended-permissions.json
-```
-
-Example:
-
-```json
-{
-  "defaultOutsideCwd": "ask",
-  "noUiDefault": "block",
-  "trustProjectConfig": false,
-  "sandboxUnavailable": "block",
-  "sandboxBash": true,
-  "rules": [
-    { "path": ".", "access": "write" },
-    { "path": "/tmp", "access": "write" },
-    { "path": "~/.config/myapp/**", "access": "deny" },
-    { "path": "~/.config/myapp/settings.json", "access": "read" }
-  ]
-}
-```
-
-Access values:
-
-- `deny` -- block reads and writes.
-- `ask` -- ask for direct Pi file tools; block in bash sandbox.
-- `read` -- allow reads, block writes.
-- `write` -- allow reads and writes.
 
 ## Development
 
@@ -121,4 +62,4 @@ npm test
 
 Extensions run with the user's local permissions. Review code carefully before installing or enabling an extension.
 
-The permission sandbox is a guardrail, not a complete sandbox for the whole Pi process. It checks direct Pi file tools and runs bash through OS sandboxing, but other extension code still executes inside the Pi process.
+Extensions run inside the Pi process and can access local files and credentials with your user permissions.

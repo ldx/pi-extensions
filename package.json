@@ -12,11 +12,11 @@
       "packages/context-usage/index.ts",
       "packages/handoff/index.ts",
       "packages/tools/index.ts",
-      "packages/permission-sandbox/index.ts"
+      "packages/clear/index.ts"
     ]
   },
   "scripts": {
-    "test": "npm --workspace packages/permission-sandbox test"
+    "test": "npm --workspaces --if-present test"
   },
   "license": "MIT"
 }

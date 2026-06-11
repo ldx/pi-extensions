@@ -1,0 +1,13 @@
+{
+  "name": "pi-clear-context",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Pi extension that clears context by starting a fresh empty session.",
+  "type": "module",
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "license": "MIT"
+}
